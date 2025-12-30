@@ -88,15 +88,12 @@ def generate_optimized_paths(
     time_length,
     num_simulations,
 ):
-    # Plot price prediction paths for given timepoints."""
-    # Determine remainder based on start_time.minute % 5
-    remainder = start_time.minute % 5
     
     # Load sigma and volatility lookup tables based on remainder
-    sigma_lookup, volatility_lookup = load_sigma_and_volatility_lookup(asset, remainder=remainder)
+    sigma_lookup, volatility_lookup = load_sigma_and_volatility_lookup(asset)
     
     # Load historical sigma data for lookback sigma values based on remainder
-    historical_sigma_df = _load_historical_sigma(asset, remainder=remainder)
+    historical_sigma_df = _load_historical_sigma(asset)
 
     # calculate end time
     end_time = start_time + timedelta(seconds=time_length)
@@ -255,23 +252,17 @@ def calculate_forecast_width(
     return width
 
 
-def _load_historical_sigma(symbol: str, remainder: Optional[int] = None) -> Optional[pd.DataFrame]:
+def _load_historical_sigma(symbol: str) -> Optional[pd.DataFrame]:
     """Load historical sigma data from CSV.
     
     Args:
         symbol: Symbol name (e.g., 'BTC', 'XAU')
-        remainder: Optional remainder (0-4) to load remainder-specific files. If None, uses default file.
     
     Returns:
         DataFrame with historical sigma data or None if file not found
     """
-    # Determine file suffix based on remainder
-    if remainder is not None:
-        suffix = f'_r{remainder}'
-    else:
-        suffix = ''
     
-    filename = f'{symbol.lower()}_sigma{suffix}.csv'
+    filename = f'{symbol.lower()}_sigma.csv'
     
     # Retry loading data up to 100 times until it succeeds (for transient errors)
     historical_sigma_df = None

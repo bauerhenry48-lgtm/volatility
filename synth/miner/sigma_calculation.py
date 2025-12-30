@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from typing import Optional
 import pandas as pd
 import numpy as np
+from tqdm import tqdm
 from synth.miner.config import TIME_INCREMENT_5MIN, TIME_INCREMENT_30MIN
 from synth.miner.symbol_config import get_symbol_config
 from synth.miner.utils import round_to_30_minutes, convert_to_datetime
@@ -80,33 +81,48 @@ def calculate_optimal_sigma(
     optimal_sigmas = []
     datetime_indexes = []
     
+    # Calculate total number of iterations for progress bar
+    total_iterations = 0
+    temp_count = 0
+    for i in range(length, -1, -6):
+        dt_index = start_time - timedelta(minutes=30 * temp_count)
+        if min_datetime is not None and dt_index < min_datetime:
+            break
+        total_iterations += 1
+        temp_count += 1
+    
     # Iterate backwards through the data in chunks of 6
     iteration_count = 0
     print(f"[SIGMA] Calculating sigmas for {symbol}...")
     
-    for i in range(length, -1, -6):
-        offset = length - i
-        dt_index = start_time - timedelta(minutes=30 * iteration_count)
-        
-        # Only calculate if >= min_time (if specified)
-        if min_datetime is not None and dt_index < min_datetime:
-            break
-        
-        # For XAU, handle different closure periods
-        if symbol == 'XAU':
-            if is_xau_weekend_closure(dt_index):
-                best_sigma = 0.0
-                optimal_sigmas.append(best_sigma)
-                datetime_indexes.append(dt_index)
-                iteration_count += 1
-                continue
-        
-        # Find optimal sigma
-        best_sigma, _ = _find_optimal_sigma(data, offset, symbol_data)
-        
-        optimal_sigmas.append(best_sigma)
-        datetime_indexes.append(dt_index)
-        iteration_count += 1
+    # Create progress bar
+    with tqdm(total=total_iterations, desc=f"[SIGMA] {symbol}", unit="iter", 
+              bar_format='{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt}]') as pbar:
+        for i in range(length, -1, -6):
+            offset = length - i
+            dt_index = start_time - timedelta(minutes=30 * iteration_count)
+            
+            # Only calculate if >= min_time (if specified)
+            if min_datetime is not None and dt_index < min_datetime:
+                break
+            
+            # For XAU, handle different closure periods
+            if symbol == 'XAU':
+                if is_xau_weekend_closure(dt_index):
+                    best_sigma = 0.0
+                    optimal_sigmas.append(best_sigma)
+                    datetime_indexes.append(dt_index)
+                    iteration_count += 1
+                    pbar.update(1)
+                    continue
+            
+            # Find optimal sigma
+            best_sigma, _ = _find_optimal_sigma(data, offset, symbol_data)
+            
+            optimal_sigmas.append(best_sigma)
+            datetime_indexes.append(dt_index)
+            iteration_count += 1
+            pbar.update(1)
     
     # Create DataFrame with datetime index and sigma values
     if optimal_sigmas:
@@ -148,7 +164,7 @@ def calculate_optimal_crps(data: pd.DataFrame, sigma: float, offset: int) -> flo
     
     # Generate 6 steps to match real_path (7 prices = 6 intervals)
     price_paths = simulate_price_paths_for_sigma(
-        close_price, TIME_INCREMENT_5MIN, TIME_INCREMENT_30MIN, 1, sigma
+        close_price, TIME_INCREMENT_5MIN, TIME_INCREMENT_30MIN, 500, sigma
     )
     numeric_value, _ = calculate_crps_for_miner(price_paths, np.array(real_path), TIME_INCREMENT_5MIN)
     return numeric_value

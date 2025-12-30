@@ -5,7 +5,7 @@ from datetime import datetime
 import pandas as pd
 import time
 
-def load_sigma_and_volatility_lookup(symbol: str, remainder: Optional[int] = None) -> Tuple[Dict[Tuple[str, str], float], Dict[Tuple[str, str], float]]:
+def load_sigma_and_volatility_lookup(symbol: str) -> Tuple[Dict[Tuple[str, str], float], Dict[Tuple[str, str], float]]:
     """Load sigma and volatility lookup tables from CSV files.
     
     Args:
@@ -15,14 +15,11 @@ def load_sigma_and_volatility_lookup(symbol: str, remainder: Optional[int] = Non
     Returns:
         Tuple of (sigma_lookup, volatility_lookup) dictionaries
     """
-    # Determine file suffix based on remainder
-    if remainder is not None:
-        suffix = f'_r{remainder}'
-    else:
-        suffix = ''
+
+
     
     # Load sigma data (30-minute intervals) with retry logic
-    sigma_filename = f'{symbol.lower()}_weekday_sigma{suffix}.csv'
+    sigma_filename = f'{symbol.lower()}_weekday_sigma.csv'
     sigma_df = None
     max_retries = 100
     for attempt in range(max_retries):
@@ -45,7 +42,7 @@ def load_sigma_and_volatility_lookup(symbol: str, remainder: Optional[int] = Non
     sigma_lookup = {(row['weekday'], row['time']): row['ewm12_sigma'] for _, row in sigma_df.iterrows()}
     
     # Load volatility data (5-minute intervals) with retry logic
-    volatility_filename = f'{symbol.lower()}_weekday_volatility{suffix}.csv'
+    volatility_filename = f'{symbol.lower()}_weekday_volatility.csv'
     volatility_df = None
     for attempt in range(max_retries):
         try:

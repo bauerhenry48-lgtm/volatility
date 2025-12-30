@@ -18,23 +18,21 @@ import time
 def main():
     """Main execution function."""
     # List of symbols to process
-    symbols = ['BTC']
+    # symbols = ['BTC']
     # symbols = ['XAU', 'SOL', 'ETH', 'BTC']
     # Process each symbol
 
-    while True:
-        for symbol in symbols:
-            print(f"\n{'='*60}")
-            print(f"Processing {symbol}")
-            print(f"{'='*60}")
-            process_symbol(symbol, fetch_new_data=True)
-        time.sleep(300)
+    # while True:
+    #     for symbol in symbols:
+    #         print(f"\n{'='*60}")
+    #         print(f"Processing {symbol}")
+    #         print(f"{'='*60}")
+    #         process_symbol(symbol, fetch_new_data=True)
+    #     time.sleep(300)
  
     symbol = 'BTC'
-    iteration = 0
     data = load_or_fetch_data(symbol, fetch_new_data=True)
 
-    print(f"iteration: {iteration}")
     process_symbol(symbol, fetch_new_data=True)
     timepoints = [
         datetime(2025, 11, 18, 0, 37, 0),

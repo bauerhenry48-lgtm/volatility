@@ -53,12 +53,13 @@ def process_sigma_calculation(symbol: str, price_data: pd.DataFrame, output_file
         # No existing sigmas, use new sigmas (even if empty)
         combined_df = new_sigma_df
     
-    # Remove oldest rows equal to the number of new rows added to maintain file size
-    num_new_rows = len(new_sigma_df)-1 if not new_sigma_df.empty else 0
-    if num_new_rows > 0 and len(combined_df) > num_new_rows:
-        # Remove oldest rows from the end (since structure is: new_sigma_df (recent) + existing_sigma_df (older))
-        combined_df = combined_df.iloc[:-num_new_rows].copy()
-        print(f"[SAVE] Removed {num_new_rows} oldest sigma data points to maintain file size")
+    # Remove oldest rows equal to the number of new rows added to maintain file size in the case of start_from_time is not None
+    if start_from_time is not None:
+        num_new_rows = len(new_sigma_df)-1 if not new_sigma_df.empty else 0
+        if num_new_rows > 0 and len(combined_df) > num_new_rows:
+            # Remove oldest rows from the end (since structure is: new_sigma_df (recent) + existing_sigma_df (older))
+            combined_df = combined_df.iloc[:-num_new_rows].copy()
+            print(f"[SAVE] Removed {num_new_rows} oldest sigma data points to maintain file size")
     
     # Write to temporary file first, then atomically replace original (safer)
     temp_file = output_filename + '.tmp'
